@@ -1,0 +1,41 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "80:3000"
+    environment:
+      DB_HOST: database
+      DB_NAME: ${DB_NAME:?isi DB_NAME}
+      DB_USER: ${DB_USER:?isi DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks: [frontend, backend]
+
+  database:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?isi DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [backend]
+
+networks:
+  frontend:
+  backend:
+    internal: true
+
+volumes:
+  mysql_data:
